@@ -1,116 +1,149 @@
-// lib/reminder-utils.ts
-import { format } from 'date-fns';
-import { parseReminderText, ReminderData, EventType } from './smartParser';
-import { LanguageCode, translations } from './translations';
+import { translations, type LanguageCode } from './translations';
 
-export type Priority = 1 | 2 | 3 | 4;
+export type EventType =
+  | 'food'
+  | 'medicine'
+  | 'travel'
+  | 'meeting'
+  | 'school'
+  | 'other';
 
-export enum ReminderStage {
-  WARNING = 'WARNING',
-  FINAL = 'FINAL'
-}
-
-export interface Reminder {
-  id: string;
-  text: string;
-  reminderTime: string; // ISO string للموعد التالي للإشعار
-  reminderTimes: string[]; // كل مواعيد الإشعار
-  eventTime: string;
-  createdAt: string;
-  isCompleted: boolean;
-  recurring: 'none' | 'hourly' | 'daily' | 'weekly';
-  priority: Priority;
+export interface ReminderAnalysis {
   eventType: EventType;
-  location?: string;
-  confidence: number;
-  suggestedMessage: string;
-  snoozeCount: number;
-  maxSnooze: number;
-  parentId?: string;
-  stage: ReminderStage;
-  totalDurationMinutes?: number;
+  eventTime: Date;
+  warningTime: Date;
+  finalTime: Date;
+  message: string;
+  confidence: number; // 0-100
 }
 
-// ---------------------------
-// حساب الأولوية بناءً على النص
-// ---------------------------
-export function analyzePriority(text: string): Priority {
+/**
+ * تحليل نص التذكير لتحديد نوع الحدث
+ */
+export function detectEventType(text: string): EventType {
   const t = text.toLowerCase();
-  const urgent = ['عاجل','ضروري','مهم جدا','فورا','urgent','important'];
-  const normal = ['عادي','تذكير','موعد','normal','reminder'];
-  const low = ['يمكن','لاحقا','بعدين','maybe','later'];
 
-  if (urgent.some(k => t.includes(k))) return 4;
-  if (normal.some(k => t.includes(k))) return 2;
-  if (low.some(k => t.includes(k))) return 1;
-  return 3;
+  if (t.includes('حليب') || t.includes('طبخ') || t.includes('نار') || t.includes('food') || t.includes('meal'))
+    return 'food';
+
+  if (t.includes('دواء') || t.includes('حبة') || t.includes('medicine') || t.includes('pill'))
+    return 'medicine';
+
+  if (t.includes('رحلة') || t.includes('طائرة') || t.includes('travel') || t.includes('flight'))
+    return 'travel';
+
+  if (t.includes('اجتماع') || t.includes('meeting') || t.includes('appointment'))
+    return 'meeting';
+
+  if (t.includes('مدرسة') || t.includes('ابن') || t.includes('ابنة') || t.includes('طفل') || t.includes('school') || t.includes('child'))
+    return 'school';
+
+  return 'other';
 }
 
-// ---------------------------
-// تحويل نص المستخدم لتذكير كامل
-// ---------------------------
-export function createReminderFromText(text: string, lang: LanguageCode = 'ar'): Reminder {
-  const parsed: ReminderData = parseReminderText(text);
-  const now = new Date();
+/**
+ * تحويل الوقت من نص إلى Date
+ * يدعم العربية والإنجليزية (12h و24h)
+ */
+export function parseTime(text: string, reference: Date = new Date()): Date {
+  let hour = 0;
+  let minute = 0;
+  let ampm: 'AM' | 'PM' | null = null;
 
-  const reminderTimesISO = parsed.reminderTimes.map(d => d.toISOString());
+  // الإنجليزية: 4:30 PM, 16:30
+  const enMatch = text.match(/(\d{1,2})(?::(\d{1,2}))?\s*(AM|PM)?/i);
+  if (enMatch) {
+    hour = parseInt(enMatch[1], 10);
+    minute = enMatch[2] ? parseInt(enMatch[2], 10) : 0;
+    ampm = enMatch[3]?.toUpperCase() as 'AM' | 'PM' | null;
+    if (ampm === 'PM' && hour < 12) hour += 12;
+    if (ampm === 'AM' && hour === 12) hour = 0;
+  }
 
-  return {
-    id: crypto.randomUUID(),
-    text,
-    reminderTime: parsed.reminderTimes[0].toISOString(),
-    reminderTimes: reminderTimesISO,
-    eventTime: parsed.eventTime.toISOString(),
-    createdAt: now.toISOString(),
-    isCompleted: false,
-    recurring: 'none',
-    priority: analyzePriority(text),
-    eventType: parsed.eventType,
-    location: undefined,
-    confidence: parsed.confidence,
-    suggestedMessage: parsed.suggestedMessage,
-    snoozeCount: 0,
-    maxSnooze: 3,
-    stage: ReminderStage.WARNING,
-    totalDurationMinutes: Math.round((parsed.reminderTimes[1].getTime() - now.getTime()) / (60*1000))
-  };
+  // العربية: الساعة 4 مساءً
+  const arMatch = text.match(/الساعة\s*(\d{1,2})(?:\s*[:٫]\s*(\d{1,2}))?\s*(صباحاً|مساءً)?/i);
+  if (arMatch) {
+    hour = parseInt(arMatch[1], 10);
+    minute = arMatch[2] ? parseInt(arMatch[2], 10) : 0;
+    const part = arMatch[3];
+    if (part === 'مساءً' && hour < 12) hour += 12;
+    if (part === 'صباحاً' && hour === 12) hour = 0;
+  }
+
+  const result = new Date(reference);
+  result.setHours(hour, minute, 0, 0);
+
+  // إذا الوقت أصغر من الآن، افترض اليوم التالي
+  if (result < reference) result.setDate(result.getDate() + 1);
+
+  return result;
 }
 
-// ---------------------------
-// توليد الرسالة الذكية النهائية للتحذير أو النهائي
-// ---------------------------
-export function generateCustomMessage(eventType: EventType, lang: LanguageCode = 'ar'): string {
+/**
+ * حساب أوقات التذكير التحذيري والنهائي
+ */
+export function calculateReminderTimes(eventType: EventType, eventTime: Date): { warningTime: Date; finalTime: Date } {
+  let durationMinutes = 0;
+  switch (eventType) {
+    case 'food':
+      durationMinutes = 25;
+      break;
+    case 'medicine':
+      durationMinutes = 30;
+      break;
+    case 'meeting':
+      durationMinutes = 60;
+      break;
+    case 'travel':
+      durationMinutes = 24 * 60; // غداً 7 صباحاً يتم حسابه مسبقاً
+      break;
+    case 'school':
+      durationMinutes = 60;
+      break;
+    default:
+      durationMinutes = 60;
+  }
+
+  const finalTime = new Date(eventTime.getTime() + durationMinutes * 60000);
+  const warningTime = new Date(eventTime.getTime() + durationMinutes * 0.8 * 60000); // 80%
+
+  return { warningTime, finalTime };
+}
+
+/**
+ * إنشاء رسالة ذكية حسب نوع الحدث
+ */
+export function buildSmartMessage(eventType: EventType, lang: LanguageCode = 'ar'): string {
   const t = translations[lang];
   switch (eventType) {
-    case 'food': return lang === 'ar' ? '🍲 الطعام جاهز تقريباً! تفقده الآن.' : '🍲 Food is almost ready! Check it now.';
-    case 'medicine': return lang === 'ar' ? '💊 حان وقت تناول الدواء. لا تنسى!' : '💊 Time to take your medicine. Don’t forget!';
-    case 'travel': return lang === 'ar' ? '✈️ اقترب موعد رحلتك. تأكد من وثائقك!' : '✈️ Your flight is approaching. Check your documents!';
-    case 'meeting': return lang === 'ar' ? '💼 تذكير باجتماعك. استعد للموعد!' : '💼 Meeting reminder. Get ready!';
-    case 'school': return lang === 'ar' ? '🏫 اقترب موعد عودة الأبناء من المدرسة.' : '🏫 Time for kids to return from school.';
-    default: return lang === 'ar' ? '🔔 تذكير: تحقق من جدولك.' : '🔔 Reminder: Check your schedule.';
+    case 'food': return t.msg_food_ready;
+    case 'medicine': return t.msg_medicine_time;
+    case 'travel': return t.msg_travel_warning;
+    case 'meeting': return t.msg_meeting_reminder;
+    case 'school': return t.msg_school_return;
+    default: return '';
   }
 }
 
-// ---------------------------
-// تسميات وألوان الأولوية
-// ---------------------------
-export function getPriorityLabel(priority: Priority, lang: LanguageCode = 'ar'): string {
-  const t = translations[lang];
-  switch(priority) {
-    case 1: return t.priority_low;
-    case 2: return t.priority_medium;
-    case 3: return t.priority_high;
-    case 4: return t.priority_critical;
-    default: return t.priority_medium;
-  }
-}
+/**
+ * تحليل نص التذكير بالكامل
+ */
+export function analyzeReminder(text: string, lang: LanguageCode = 'ar', reference: Date = new Date()): ReminderAnalysis {
+  const eventType = detectEventType(text);
 
-export function getPriorityColor(priority: Priority): string {
-  switch(priority) {
-    case 1: return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500';
-    case 2: return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
-    case 3: return 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400';
-    case 4: return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
-    default: return 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500';
-  }
+  // حاول العثور على الوقت في النص
+  const eventTime = parseTime(text, reference);
+
+  const { warningTime, finalTime } = calculateReminderTimes(eventType, eventTime);
+
+  const message = buildSmartMessage(eventType, lang);
+
+  return {
+    eventType,
+    eventTime,
+    warningTime,
+    finalTime,
+    message,
+    confidence: 95, // مبدئي، يمكن تحسينه لاحقاً
+  };
 }
