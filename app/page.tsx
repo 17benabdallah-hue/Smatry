@@ -1,36 +1,41 @@
-'use client';
+"use client";
 
-import './globals.css';
-import { Inter } from 'next/font/google';
-import React from 'react';
-import { ErrorHandlerProvider } from '@/lib/error-context';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { LanguageProvider } from '@/lib/LanguageContext';
+import { useState } from "react";
 
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata = {
-  title: 'Smarty',
-  description: 'تطبيق تذكيرات ذكي يعمل بدون انترنت ويحترم خصوصيتك',
-};
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const handleError = (error: Error | any) => {
-    console.error('Captured by Global ErrorHandler:', error);
-    // يمكن هنا استدعاء ErrorReporter أو IndexedDB لحفظ السجلات
-  };
+export default function Home() {
+  const [text, setText] = useState("");
 
   return (
-    <html lang="ar" dir="rtl">
-      <body className={inter.className}>
-        <ErrorHandlerProvider onError={handleError}>
-          <ErrorBoundary>
-            <LanguageProvider>
-              {children}
-            </LanguageProvider>
-          </ErrorBoundary>
-        </ErrorHandlerProvider>
-      </body>
-    </html>
+    <main style={{ padding: 20 }}>
+      <h1>Smarty</h1>
+
+      <p>اكتب تذكيرك:</p>
+
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="مثال: اشرب الدواء الساعة 16:00"
+        style={{
+          padding: 10,
+          width: "100%",
+          border: "1px solid #ccc",
+          borderRadius: 8,
+        }}
+      />
+
+      <br />
+      <br />
+
+      <button
+        style={{
+          padding: 10,
+          background: "#6750A4",
+          color: "white",
+          borderRadius: 8,
+        }}
+      >
+        حفظ التذكير
+      </button>
+    </main>
   );
 }
