@@ -1,29 +1,26 @@
 'use client';
 
-import React, { createContext, useContext, useCallback, useState } from 'react';
+import React, { createContext, useContext, useCallback, useState, ReactNode } from 'react';
 
 interface ErrorHandlerContextType {
   onError: (error: Error | any) => void;
 }
 
-const ErrorHandlerContext = createContext<ErrorHandlerContextType | null>(null);
+const ErrorHandlerContext = createContext<ErrorHandlerContextType | undefined>(undefined);
 
 /**
- * Hook to access the global error handler
- * mimics the LocalErrorHandler.current pattern in Compose
+ * Hook to access the global error handler.
  */
 export const useErrorHandler = () => {
   const context = useContext(ErrorHandlerContext);
-  
-  // If we're not inside a provider, we'll just throw the error normally
-  // which might be caught by a parent ErrorBoundary if it's during render
-  const [_, setError] = useState();
-  
+
+  // fallback state to trigger ErrorBoundary outside provider
+  const [, setError] = useState<never>();
+
   const triggerError = useCallback((error: Error | any) => {
     if (context) {
       context.onError(error);
     } else {
-      // Standard React trick to trigger ErrorBoundary from event handlers
       setError(() => {
         throw error instanceof Error ? error : new Error(String(error));
       });
@@ -33,13 +30,15 @@ export const useErrorHandler = () => {
   return { onError: triggerError };
 };
 
-export const ErrorHandlerProvider = ({ 
-  children, 
-  onError 
-}: { 
-  children: React.ReactNode; 
+interface ErrorHandlerProviderProps {
+  children: ReactNode;
   onError: (error: Error | any) => void;
-}) => {
+}
+
+/**
+ * Provides a global error handler to all children.
+ */
+export const ErrorHandlerProvider: React.FC<ErrorHandlerProviderProps> = ({ children, onError }) => {
   return (
     <ErrorHandlerContext.Provider value={{ onError }}>
       {children}
