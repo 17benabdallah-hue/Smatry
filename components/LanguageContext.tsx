@@ -1,54 +1,36 @@
+"use client";
 
-'use client';
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LanguageCode, Translations, translations } from '@/lib/translations';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { LanguageCode, translations } from "./translations";
 
 interface LanguageContextType {
   language: LanguageCode;
-  setLanguage: (lang: LanguageCode) => void;
-  t: Translations;
+  setLanguage: (code: LanguageCode) => void;
+  t: any;
   isRTL: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<LanguageCode>(() => {
-    if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem('app_language') as LanguageCode;
-      if (savedLanguage && translations[savedLanguage]) {
-        return savedLanguage;
-      }
-      const browserLang = navigator.language.split('-')[0] as LanguageCode;
-      if (translations[browserLang]) {
-        return browserLang;
-      }
-    }
-    return 'ar';
-  });
+export const LanguageProvider = ({ children }: { children: ReactNode }) => {
+  const [language, setLanguage] = useState<LanguageCode>("ar");
 
+  // تحميل اللغة من localStorage عند بداية التشغيل
   useEffect(() => {
-    // Update document direction and lang attribute
-    const isRTL = language === 'ar';
-    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    const savedLang = localStorage.getItem("language");
+    if (savedLang) setLanguage(savedLang as LanguageCode);
+  }, []);
+
+  // حفظ اللغة في localStorage عند التغيير
+  useEffect(() => {
+    localStorage.setItem("language", language);
   }, [language]);
 
-  const setLanguage = (lang: LanguageCode) => {
-    setLanguageState(lang);
-    localStorage.setItem('app_language', lang);
-  };
-
-  const value = {
-    language,
-    setLanguage,
-    t: translations[language],
-    isRTL: language === 'ar'
-  };
+  const isRTL = language === "ar";
+  const t = translations[language] || translations["ar"];
 
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -56,8 +38,6 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (context === undefined) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
+  if (!context) throw new Error("useLanguage must be used within LanguageProvider");
   return context;
 };
