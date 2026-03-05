@@ -1,10 +1,7 @@
-'use client';
-
-import './globals.css';
+// app/layout.tsx
 import { Inter } from 'next/font/google';
-import React from 'react';
+import './globals.css';
 import { ErrorHandlerProvider } from '@/lib/error-context';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LanguageProvider } from '@/lib/LanguageContext';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -15,20 +12,13 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const handleError = (error: Error | any) => {
-    console.error('Captured by Global ErrorHandler:', error);
-    // يمكن هنا استدعاء ErrorReporter أو IndexedDB لحفظ السجلات
-  };
-
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" className="dark">
       <body className={inter.className}>
-        <ErrorHandlerProvider onError={handleError}>
-          <ErrorBoundary>
-            <LanguageProvider>
-              {children}
-            </LanguageProvider>
-          </ErrorBoundary>
+        <ErrorHandlerProvider onError={(err) => console.error(err)}>
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </ErrorHandlerProvider>
       </body>
     </html>
