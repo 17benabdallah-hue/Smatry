@@ -1,53 +1,35 @@
-import type { Metadata } from 'next';
-import { Inter, Cairo } from 'next/font/google';
+'use client';
+
 import './globals.css';
-import { smarty } from '@/components/smarty';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-});
-
-const cairo = Cairo({
-  subsets: ['arabic'],
-  variable: '--font-arabic',
-});
-
-export const metadata: Metadata = {
-  title: 'Smatry',
-  description: 'تطبيق ذكي لإدارة التذكيرات والمواعيد مع تحليل تلقائي للنصوص العربية',
-};
-
+import { Inter } from 'next/font/google';
+import React from 'react';
+import { ErrorHandlerProvider } from '@/lib/error-context';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { LanguageProvider } from '@/lib/LanguageContext';
 
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
+  title: 'Smarty - السكرتير الذكي',
+  description: 'تطبيق تذكيرات ذكي يعمل بدون انترنت ويحترم خصوصيتك',
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const handleError = (error: Error | any) => {
+    console.error('Captured by Global ErrorHandler:', error);
+    // يمكن هنا استدعاء ErrorReporter أو IndexedDB لحفظ السجلات
+  };
+
   return (
-    <html lang="ar" dir="rtl" className={`${inter.variable} ${cairo.variable}`} suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme');
-                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (theme === 'dark' || (!theme && prefersDark)) {
-                    document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.remove('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
-      <body suppressHydrationWarning className="font-arabic antialiased bg-[#f8fafc] text-slate-900">
-        <LanguageProvider>
+    <html lang="ar" dir="rtl">
+      <body className={inter.className}>
+        <ErrorHandlerProvider onError={handleError}>
           <ErrorBoundary>
-            {children}
+            <LanguageProvider>
+              {children}
+            </LanguageProvider>
           </ErrorBoundary>
-        </LanguageProvider>
+        </ErrorHandlerProvider>
       </body>
     </html>
   );
