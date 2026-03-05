@@ -1,7 +1,9 @@
+/* globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* قاعدة الخط العربي ولون الخلفية والنص */
 body {
   @apply font-arabic bg-surface text-on-surface;
-}}
+}
