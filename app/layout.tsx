@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Cairo } from 'next/font/google';
 import './globals.css';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { smarty } from '@/components/smarty';
 
 const inter = Inter({
   subsets: ['latin'],
