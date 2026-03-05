@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ChevronLeft, Info, Code, MessageCircle } from 'lucide-react';
-import { useLanguage } from './LanguageContext';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface AboutScreenProps {
   onBack: () => void;
