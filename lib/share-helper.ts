@@ -1,3 +1,7 @@
+/**
+ * ShareHelper - يساعد على مشاركة التذكيرات عبر Web Share API أو النسخ للحافظة
+ */
+
 export const ShareHelper = {
   shareReminder: async (reminderText: string) => {
     const textToShare = `📋 تذكير: ${reminderText}\n\nتم عبر تطبيق Smatry`;
@@ -14,7 +18,7 @@ export const ShareHelper = {
         }
       }
     } else {
-      // Fallback to clipboard
+      // إذا لم يدعم المتصفح Web Share API، نستخدم النسخ للحافظة
       try {
         await navigator.clipboard.writeText(textToShare);
         alert('تم نسخ التذكير إلى الحافظة');
