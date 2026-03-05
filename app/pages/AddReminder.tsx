@@ -1,14 +1,14 @@
+// app/pages/AddReminder.tsx
 'use client';
 
 import React, { useState } from 'react';
-import { analyzeReminder, type ReminderAnalysis } from '@/lib/reminder-utils';
-import { LanguageContext } from '@/lib/LanguageContext';
+import { analyzeReminder, type ReminderAnalysis } from '@/lib/analysis';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function AddReminder() {
   const [text, setText] = useState('');
   const [analysis, setAnalysis] = useState<ReminderAnalysis | null>(null);
-
-  const { language } = React.useContext(LanguageContext);
+  const { language } = useLanguage();
 
   const handleAnalyze = () => {
     if (!text.trim()) return;
@@ -18,9 +18,9 @@ export default function AddReminder() {
 
   const handleSave = () => {
     if (!analysis) return;
-    // هنا يمكنك حفظ التذكير في IndexedDB أو أي تخزين محلي
-    console.log('Reminder saved:', { text, ...analysis });
-    alert('تم حفظ التذكير بنجاح ✅');
+    // حفظ التذكير في IndexedDB أو أي تخزين محلي آخر
+    console.log('Saving reminder:', analysis);
+    alert('تم حفظ التذكير!');
     setText('');
     setAnalysis(null);
   };
@@ -37,46 +37,29 @@ export default function AddReminder() {
         onChange={(e) => setText(e.target.value)}
       />
 
-      <div className="flex gap-2 mb-4">
-        <button
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={handleAnalyze}
-        >
-          تحليل
-        </button>
-
-        {analysis && (
-          <button
-            className="bg-green-600 text-white px-4 py-2 rounded"
-            onClick={handleSave}
-          >
-            حفظ التذكير
-          </button>
-        )}
-      </div>
+      <button
+        onClick={handleAnalyze}
+        className="bg-primary text-on-primary px-4 py-2 rounded mb-4"
+      >
+        تحليل التذكير
+      </button>
 
       {analysis && (
-        <div className="bg-gray-100 p-3 rounded border">
-          <p>
-            <strong>نوع الحدث:</strong> {analysis.eventType}
-          </p>
-          <p>
-            <strong>وقت الحدث:</strong> {analysis.eventTime.toLocaleTimeString('ar-DZ')}
-          </p>
-          <p>
-            <strong>التذكير التحذيري:</strong> {analysis.warningTime.toLocaleTimeString('ar-DZ')}
-          </p>
-          <p>
-            <strong>التذكير النهائي:</strong> {analysis.finalTime.toLocaleTimeString('ar-DZ')}
-          </p>
-          <p>
-            <strong>الرسالة الذكية:</strong> {analysis.message}
-          </p>
-          <p>
-            <strong>مستوى الثقة:</strong> {analysis.confidence}%
-          </p>
+        <div className="border p-3 rounded bg-surface-variant mb-4">
+          <p>نوع الحدث: {analysis.eventType}</p>
+          <p>وقت الحدث: {analysis.eventTime.toLocaleTimeString()}</p>
+          <p>وقت التذكير التحذيري: {analysis.warningTime.toLocaleTimeString()}</p>
+          <p>وقت التذكير النهائي: {analysis.finalTime.toLocaleTimeString()}</p>
+          <p>الرسالة الذكية: {analysis.message}</p>
         </div>
       )}
+
+      <button
+        onClick={handleSave}
+        className="bg-secondary text-on-secondary px-4 py-2 rounded"
+      >
+        حفظ التذكير
+      </button>
     </div>
   );
 }
