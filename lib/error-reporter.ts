@@ -1,72 +1,74 @@
-/**
- * معالج تقارير الأخطاء - نسخة الويب المستوحاة من نسخة أندرويد
- * ErrorReporter - Web version inspired by the Android implementation
- */
+export interface ErrorLogEntry {
+  timestamp: string;
+  type: string;
+  message: string;
+  stack?: string;
+}
 
-export const ErrorReporter = {
-  /**
-   * إرسال تقرير تلقائي إلى السيرفر
-   */
-  async report(error: Error | any) {
+export interface ErrorStats {
+  [key: string]: number | string;
+  last_error_time: number;
+}
+
+const LOG_STORAGE_KEY = 'smart_reminder_error_logs';
+const STATS_STORAGE_KEY = 'smart_reminder_error_stats';
+const MAX_LOGS = 50;
+
+export const ErrorLogger = {
+  log(error: Error | any) {
     const throwable = error instanceof Error ? error : new Error(String(error));
-    
-    // لا نريد إبطاء التطبيق، لذا نستخدم fetch في الخلفية
-    try {
-      const payload = {
-        app_version: '1.0.0-web',
-        user_agent: navigator.userAgent,
-        platform: navigator.platform,
-        screen_resolution: `${window.screen.width}x${window.screen.height}`,
-        error_type: throwable.name || 'Error',
-        error_message: throwable.message,
-        stack_trace: throwable.stack,
-        timestamp: Date.now(),
-        url: window.location.href,
-      };
+    console.error('❌ خطأ:', throwable.message, throwable);
+    this.saveToStorage(throwable);
+    this.updateErrorStats(throwable);
+  },
 
-      // ملاحظة: هذا رابط تجريبي، يجب استبداله برابط حقيقي في الإنتاج
-      // console.log('[ErrorReporter] Sending report to server...', payload);
-      
-      /*
-      await fetch('https://your-server.com/api/error-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      */
+  saveToStorage(throwable: Error) {
+    try {
+      const logs: ErrorLogEntry[] = JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || '[]');
+      const newEntry: ErrorLogEntry = {
+        timestamp: new Date().toISOString(),
+        type: throwable.name || 'Error',
+        message: throwable.message,
+        stack: throwable.stack?.split('\n').slice(0, 10).join('\n'),
+      };
+      const updatedLogs = [newEntry, ...logs].slice(0, MAX_LOGS);
+      localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(updatedLogs));
     } catch (e) {
-      // تجاهل الأخطاء أثناء إرسال التقارير لتجنب الحلقات اللانهائية
-      console.warn('[ErrorReporter] Failed to send report to server', e);
+      console.error('فشل حفظ الخطأ في التخزين المحلي', e);
     }
   },
 
-  /**
-   * إرسال تقرير عبر البريد الإلكتروني (بديل بسيط)
-   */
-  sendEmailReport(error: Error | string) {
-    const throwable = error instanceof Error ? error : new Error(String(error));
-    const recipient = 'support@smartreminder.dz';
-    const subject = encodeURIComponent('تقرير خطأ - التذكير الذكي (نسخة الويب)');
-    const body = encodeURIComponent(this.buildEmailBody(throwable));
-    
-    window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+  updateErrorStats(throwable: Error) {
+    try {
+      const stats: ErrorStats = JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) || '{"last_error_time":0}');
+      const errorType = throwable.name || 'Error';
+      const currentCount = (stats[errorType] as number) || 0;
+      stats[errorType] = currentCount + 1;
+      stats.last_error_time = Date.now();
+      localStorage.setItem(STATS_STORAGE_KEY, JSON.stringify(stats));
+    } catch (e) {
+      console.error('فشل تحديث إحصائيات الأخطاء', e);
+    }
   },
 
-  buildEmailBody(throwable: Error): string {
-    return `
-نوع الخطأ: ${throwable.name || 'Error'}
-الرسالة: ${throwable.message}
+  getErrorStats(): ErrorStats {
+    try {
+      return JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) || '{"last_error_time":0}');
+    } catch (e) {
+      return { last_error_time: 0 };
+    }
+  },
 
-إصدار التطبيق: 1.0.0-web
-المتصفح: ${navigator.userAgent}
-المنصة: ${navigator.platform}
-دقة الشاشة: ${window.screen.width}x${window.screen.height}
+  getLogs(): ErrorLogEntry[] {
+    try {
+      return JSON.parse(localStorage.getItem(LOG_STORAGE_KEY) || '[]');
+    } catch (e) {
+      return [];
+    }
+  },
 
-الوقت: ${new Date().toLocaleString('ar-DZ')}
-الرابط: ${window.location.href}
-
-Stack Trace:
-${throwable.stack || 'No stack trace available'}
-    `.trim();
+  clearLogs() {
+    localStorage.removeItem(LOG_STORAGE_KEY);
+    localStorage.removeItem(STATS_STORAGE_KEY);
   }
 };
