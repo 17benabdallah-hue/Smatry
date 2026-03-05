@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: 'تطبيق ذكي لإدارة التذكيرات والمواعيد مع تحليل تلقائي للنصوص العربية',
 };
 
-import { LanguageProvider } from '@/components/LanguageContext';
+import { LanguageProvider } from '@/lib/LanguageContext';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
