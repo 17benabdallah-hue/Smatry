@@ -19,6 +19,10 @@ export type Translations = {
   active_reminders: string;
   no_active_reminders: string;
   priority: string;
+  priority_low: string;
+  priority_medium: string;
+  priority_high: string;
+  priority_critical: string;
   warning: string;
   location: string;
   hourly: string;
@@ -65,6 +69,10 @@ export const translations: Record<LanguageCode, Translations> = {
     active_reminders: 'التذكيرات النشطة',
     no_active_reminders: 'لا توجد تذكيرات نشطة',
     priority: 'أولوية',
+    priority_low: 'منخفضة',
+    priority_medium: 'متوسطة',
+    priority_high: 'عالية',
+    priority_critical: 'عاجلة',
     warning: 'تحذيري',
     location: 'الموقع',
     hourly: 'كل ساعة',
@@ -109,6 +117,10 @@ export const translations: Record<LanguageCode, Translations> = {
     active_reminders: 'Active Reminders',
     no_active_reminders: 'No active reminders',
     priority: 'Priority',
+    priority_low: 'Low',
+    priority_medium: 'Medium',
+    priority_high: 'High',
+    priority_critical: 'Critical',
     warning: 'Warning',
     location: 'Location',
     hourly: 'Hourly',
@@ -153,6 +165,10 @@ export const translations: Record<LanguageCode, Translations> = {
     active_reminders: 'Rappels actifs',
     no_active_reminders: 'Aucun rappel actif',
     priority: 'Priorité',
+    priority_low: 'Basse',
+    priority_medium: 'Moyenne',
+    priority_high: 'Haute',
+    priority_critical: 'Critique',
     warning: 'Avertissement',
     location: 'Emplacement',
     hourly: 'Toutes les heures',
@@ -197,6 +213,10 @@ export const translations: Record<LanguageCode, Translations> = {
     active_reminders: '活动提醒',
     no_active_reminders: '没有活动提醒',
     priority: '优先级',
+    priority_low: '低',
+    priority_medium: '中',
+    priority_high: '高',
+    priority_critical: '紧急',
     warning: '警告',
     location: '位置',
     hourly: '每小时',
