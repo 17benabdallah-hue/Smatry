@@ -1,11 +1,28 @@
+export interface Reminder {
+  id: string;
+  title: string;
+  date: string;
+  priority: string;
+}
+
 export const ReminderStorage = {
-  save(reminder: any) {
-    const reminders = JSON.parse(localStorage.getItem("reminders") || "[]");
+  save(reminder: Reminder) {
+    const reminders: Reminder[] = JSON.parse(localStorage.getItem("reminders") || "[]");
     reminders.push(reminder);
     localStorage.setItem("reminders", JSON.stringify(reminders));
   },
 
-  getAll() {
+  getAll(): Reminder[] {
     return JSON.parse(localStorage.getItem("reminders") || "[]");
+  },
+
+  delete(id: string) {
+    const reminders: Reminder[] = JSON.parse(localStorage.getItem("reminders") || "[]");
+    const updated = reminders.filter(r => r.id !== id);
+    localStorage.setItem("reminders", JSON.stringify(updated));
+  },
+
+  clear() {
+    localStorage.removeItem("reminders");
   }
 };
