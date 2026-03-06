@@ -38,7 +38,6 @@ export type Translations = {
   what_to_remember: string;
   smart_suggestions: string;
   smart_completion: string;
-  smart_analysis: string;
   confidence: string;
   event_time: string;
   remind_before: string;
@@ -88,7 +87,6 @@ export const translations: Record<LanguageCode, Translations> = {
     what_to_remember: 'ماذا تريد أن تتذكر؟',
     smart_suggestions: 'اقتراحات ذكية',
     smart_completion: 'إكمال ذكي',
-    smart_analysis: 'تحليل ذكي',
     confidence: 'الثقة',
     event_time: 'وقت الحدث',
     remind_before: 'تذكير قبل',
@@ -136,7 +134,6 @@ export const translations: Record<LanguageCode, Translations> = {
     what_to_remember: 'What do you want to remember?',
     smart_suggestions: 'Smart Suggestions',
     smart_completion: 'Smart Completion',
-    smart_analysis: 'Smart Analysis',
     confidence: 'Confidence',
     event_time: 'Event Time',
     remind_before: 'Remind Before',
@@ -184,7 +181,6 @@ export const translations: Record<LanguageCode, Translations> = {
     what_to_remember: 'Que voulez-vous retenir?',
     smart_suggestions: 'Suggestions intelligentes',
     smart_completion: 'Complétion intelligente',
-    smart_analysis: 'Analyse intelligente',
     confidence: 'Confiance',
     event_time: 'Heure de l\'événement',
     remind_before: 'Rappeler avant',
@@ -232,7 +228,6 @@ export const translations: Record<LanguageCode, Translations> = {
     what_to_remember: '您想记住什么？',
     smart_suggestions: '智能建议',
     smart_completion: '智能补全',
-    smart_analysis: '智能分析',
     confidence: '置信度',
     event_time: '事件时间',
     remind_before: '提前提醒',
